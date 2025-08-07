@@ -22,6 +22,9 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { authClient } from '@/lib/auth-client';
+import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
 const formSchema = z
   .object({
@@ -40,6 +43,8 @@ const formSchema = z
 type FormValues = z.infer<typeof formSchema>;
 
 const SignUpForm = () => {
+  const router = useRouter();
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -50,10 +55,29 @@ const SignUpForm = () => {
     },
   });
 
-  function onSubmit(values: FormValues) {
-    console.log('Form submitted with values:', values);
-
-    console.log(values);
+  async function onSubmit(values: FormValues) {
+    await authClient.signUp.email({
+      name: values.name,
+      email: values.email,
+      password: values.password,
+      fetchOptions: {
+        onSuccess: () => {
+          toast('Account created successfully!');
+          router.push('/');
+        },
+        onError: (error) => {
+          if (error.error.code === 'USER_ALREADY_EXISTS') {
+            toast.error('An account with this email already exists.');
+            form.setError('email', {
+              message: 'An account with this email already exists.',
+            });
+          }
+          toast.error(
+            error.error.message || 'An error occurred during sign up',
+          );
+        },
+      },
+    });
   }
 
   return (
