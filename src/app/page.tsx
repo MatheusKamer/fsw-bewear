@@ -1,6 +1,9 @@
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Header } from '@/components/common/header';
 
 export default function Home() {
-  return <Button>BEWEAR</Button>;
+  return (
+    <>
+      <Header />
+    </>
+  );
 }
