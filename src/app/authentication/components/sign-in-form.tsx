@@ -22,6 +22,9 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { authClient } from '@/lib/auth-client';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 const formSchema = z.object({
   email: z.email('Invalid email address'),
@@ -31,6 +34,8 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const SignInForm = () => {
+  const router = useRouter();
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -39,10 +44,24 @@ const SignInForm = () => {
     },
   });
 
-  function onSubmit(values: FormValues) {
-    console.log('Form submitted with values:', values);
-
-    console.log(values);
+  async function onSubmit(values: FormValues) {
+    await authClient.signIn.email({
+      email: values.email,
+      password: values.password,
+      fetchOptions: {
+        onSuccess: () => {
+          router.push('/');
+        },
+        onError: (error) => {
+          if (error.error.code === 'INVALID_EMAIL_OR_PASSWORD') {
+            toast.error('Invalid email or password.');
+            return form.setError('email', {
+              message: 'Invalid email or password.',
+            });
+          }
+        },
+      },
+    });
   }
 
   return (
