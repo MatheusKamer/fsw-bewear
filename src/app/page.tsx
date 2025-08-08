@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { CategorySelector } from '@/components/common/category-selector';
 import { Footer } from '@/components/common/footer';
 import { Header } from '@/components/common/header';
+import { PartnerBrands } from '@/components/common/partner-brands';
 import { ProductsList } from '@/components/common/products-list';
 import { db } from '@/db';
 import { productTable } from '@/db/schema';
@@ -36,6 +37,8 @@ export default async function Home() {
             className="h-auto w-full"
           />
         </div>
+
+        <PartnerBrands />
 
         <ProductsList title="Featured Products" products={products} />
 
