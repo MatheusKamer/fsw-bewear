@@ -1,6 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -64,6 +65,12 @@ const SignInForm = () => {
     });
   }
 
+  const HandleSignInWithGoogle = async () => {
+    await authClient.signIn.social({
+      provider: 'google',
+    });
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -102,8 +109,24 @@ const SignInForm = () => {
               )}
             />
           </CardContent>
-          <CardFooter>
-            <Button type="submit">Sign In</Button>
+          <CardFooter className="flex flex-col gap-2">
+            <Button type="submit" className="w-full">
+              Sign In
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={HandleSignInWithGoogle}
+            >
+              <Image
+                src="/google-icon.svg"
+                alt="Sign in with Google"
+                width={20}
+                height={20}
+              />
+              Sign In with Google
+            </Button>
           </CardFooter>
         </form>
       </Form>
