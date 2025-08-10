@@ -1,7 +1,9 @@
-import { MinusIcon, PlusIcon, Trash2Icon, TrashIcon } from 'lucide-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { MinusIcon, PlusIcon, TrashIcon } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 
+import { removeProductFromCart } from '@/actions/remove-cart-action';
 import { formatCentsToBRL } from '@/helpers/money';
 
 import { Button } from '../ui/button';
@@ -24,6 +26,18 @@ export const CartItem = ({
   quantityProduct,
 }: CartItemProps) => {
   const [quantity, setQuantity] = useState(quantityProduct);
+
+  const queryClient = useQueryClient();
+
+  const { mutate: removeFromCart } = useMutation({
+    mutationKey: ['removeCartItem', id],
+    mutationFn: async () => {
+      await removeProductFromCart({ cartItemId: id });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cart'] });
+    },
+  });
 
   const increment = () => setQuantity((prev) => prev + 1);
   const decrement = () => setQuantity((prev) => Math.max(prev - 1, 1));
@@ -57,7 +71,11 @@ export const CartItem = ({
       </div>
       <div className="flex h-[78px] flex-col items-end justify-between">
         <p className="text-sm font-medium">{priceTotal}</p>
-        <Button variant={'outline'} size={'icon'}>
+        <Button
+          variant={'outline'}
+          size={'icon'}
+          onClick={() => removeFromCart()}
+        >
           <TrashIcon className="text-red-500" />
         </Button>
       </div>
