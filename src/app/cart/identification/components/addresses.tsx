@@ -1,6 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { PatternFormat } from 'react-number-format';
@@ -25,6 +26,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { shippingAddressTable } from '@/db/schema';
 import { useCart } from '@/hooks/queries/use-cart';
 import { useUserAddresses } from '@/hooks/queries/use-user-addresses';
+
+import { formatAddress } from '../../helpers/address';
 
 const addressFormSchema = z.object({
   recipientName: z
@@ -53,17 +56,6 @@ const addressFormSchema = z.object({
 });
 
 type AddressFormValues = z.infer<typeof addressFormSchema>;
-
-const formatCep = (cep: string) => {
-  return cep.replace(/(\d{5})(\d{3})/, '$1-$2');
-};
-
-const formatPhone = (phone: string) => {
-  if (phone.length === 11) {
-    return phone.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
-  }
-  return phone.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
-};
 
 async function fetchAddressByCep(cep: string) {
   try {
@@ -99,6 +91,7 @@ export const Addresses = ({
   const [selectedAddress, setSelectedAddress] = useState<string | null>(
     defaultShippingAddressId,
   );
+  const router = useRouter();
   const [isLoadingCep, setIsLoadingCep] = useState(false);
   const [isSubmittingForm, setIsSubmittingForm] = useState(false);
   const [isUpdatingCart, setIsUpdatingCart] = useState(false);
@@ -114,9 +107,7 @@ export const Addresses = ({
         });
 
         if (result.success) {
-          toast.success(result.message);
-          // TODO: adicionar redirecionamento
-          // Por exemplo: router.push('/checkout/payment')
+          router.push('/cart/confirmation');
         }
       } catch (error) {
         toast.error('Erro ao vincular endereço ao carrinho. Tente novamente.');
@@ -126,9 +117,7 @@ export const Addresses = ({
         setIsUpdatingCart(false);
       }
     } else {
-      // TODO: adicionar redirecionamento
-      // Por exemplo: router.push('/checkout/payment')
-      toast.success('Prosseguindo para o pagamento...');
+      router.push('/cart/confirmation');
     }
   };
 
@@ -234,25 +223,7 @@ export const Addresses = ({
                     />
                     <div className="flex-1">
                       <Label htmlFor={address.id} className="cursor-pointer">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">
-                              {address.recipientName}
-                            </span>
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            {address.street}, {address.number}
-                            {address.complement && `, ${address.complement}`}
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            {address.neighborhood}, {address.city} -{' '}
-                            {address.state}
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            CEP: {formatCep(address.zipCode)} | Tel:{' '}
-                            {formatPhone(address.phone)}
-                          </div>
-                        </div>
+                        {formatAddress(address)}
                       </Label>
                     </div>
                   </div>
@@ -489,7 +460,7 @@ export const Addresses = ({
             }
             className="w-full md:w-auto"
           >
-            {isUpdatingCart ? 'Preparando...' : 'Seguir para pagamento'}
+            Proceed with payment
           </Button>
         </div>
       </CardContent>
