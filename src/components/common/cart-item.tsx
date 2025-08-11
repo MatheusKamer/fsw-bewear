@@ -1,12 +1,11 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { MinusIcon, PlusIcon, TrashIcon } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 
-import { addProductToCart } from '@/actions/add-cart-products';
-import { decreaseCartProductQuantity } from '@/actions/decrease-cart-product-quantity';
-import { removeProductFromCart } from '@/actions/remove-cart-action';
 import { formatCentsToBRL } from '@/helpers/money';
+import { useDecreaseCartProduct } from '@/hooks/mutations/use-decrease-cart-product';
+import { useIncrementCartProduct } from '@/hooks/mutations/use-increment-cart-product';
+import { useRemoveProductFromCart } from '@/hooks/mutations/use-remove-product-from-cart';
 
 import { Button } from '../ui/button';
 
@@ -31,39 +30,38 @@ export const CartItem = ({
 }: CartItemProps) => {
   const [quantity, setQuantity] = useState(quantityProduct);
 
-  const queryClient = useQueryClient();
+  const { mutate: removeFromCart } = useRemoveProductFromCart(id);
+  const { mutate: decreaseProductQuantity } = useDecreaseCartProduct(id);
+  const { mutate: incrementProductQuantity } =
+    useIncrementCartProduct(productVariantId);
 
-  const { mutate: removeFromCart } = useMutation({
-    mutationKey: ['removeCartItem', id],
-    mutationFn: async () => {
-      await removeProductFromCart({ cartItemId: id });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
-    },
-  });
+  function handleRemoveProductFromCart() {
+    try {
+      removeFromCart();
+    } catch (error) {
+      console.error('Error removing product from cart:', error);
+    }
+  }
 
-  const { mutate: decreaseProductQuantity } = useMutation({
-    mutationKey: ['decreaseCartProductQuantity', id],
-    mutationFn: async () => {
-      await decreaseCartProductQuantity({ cartItemId: id });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
+  function handleDecreaseQuantity() {
+    try {
+      decreaseProductQuantity();
+
       setQuantity((prev) => Math.max(prev - 1, 1));
-    },
-  });
+    } catch (error) {
+      console.error('Error decreasing product quantity:', error);
+    }
+  }
 
-  const { mutate: incrementProductQuantity } = useMutation({
-    mutationKey: ['incrementCartProductQuantity', productVariantId],
-    mutationFn: async () => {
-      await addProductToCart({ productVariantId, quantity: 1 });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
+  function handleIncrementQuantity() {
+    try {
+      incrementProductQuantity();
+
       setQuantity((prev) => prev + 1);
-    },
-  });
+    } catch (error) {
+      console.error('Error incrementing product quantity:', error);
+    }
+  }
 
   const priceTotal = formatCentsToBRL(productVariantPriceInCents * quantity);
   return (
@@ -83,10 +81,10 @@ export const CartItem = ({
           </p>
           <div className="flex w-24 items-center justify-between rounded-lg border">
             <Button
-              disabled={quantity === 1}
+              disabled={quantity < 2}
               size={'icon'}
               variant={'ghost'}
-              onClick={() => decreaseProductQuantity()}
+              onClick={handleDecreaseQuantity}
             >
               <MinusIcon />
             </Button>
@@ -94,7 +92,7 @@ export const CartItem = ({
             <Button
               size={'icon'}
               variant={'ghost'}
-              onClick={() => incrementProductQuantity()}
+              onClick={handleIncrementQuantity}
             >
               <PlusIcon />
             </Button>
@@ -106,7 +104,7 @@ export const CartItem = ({
         <Button
           variant={'outline'}
           size={'icon'}
-          onClick={() => removeFromCart()}
+          onClick={handleRemoveProductFromCart}
         >
           <TrashIcon className="text-red-500" />
         </Button>
