@@ -7,12 +7,15 @@ import { db } from '@/db';
 import { cartItemTable } from '@/db/schema';
 import { auth } from '@/lib/auth';
 
-import { RemoveCartItemSchema, removeCartItemSchema } from './schema';
+import {
+  DecreaseCartProductQuantitySchema,
+  decreaseCartProductQuantitySchema,
+} from './schema';
 
-export const removeProductFromCart = async ({
+export const decreaseCartProductQuantity = async ({
   cartItemId,
-}: RemoveCartItemSchema) => {
-  removeCartItemSchema.parse({
+}: DecreaseCartProductQuantitySchema) => {
+  decreaseCartProductQuantitySchema.parse({
     cartItemId,
   });
 
@@ -39,5 +42,16 @@ export const removeProductFromCart = async ({
     throw new Error('Cart item does not belong to user');
   }
 
-  await db.delete(cartItemTable).where(eq(cartItemTable.id, cartItem.id));
+  if (cartItem.quantity === 1) {
+    return await db
+      .delete(cartItemTable)
+      .where(eq(cartItemTable.id, cartItem.id));
+  }
+
+  await db
+    .update(cartItemTable)
+    .set({
+      quantity: cartItem.quantity - 1,
+    })
+    .where(eq(cartItemTable.id, cartItem.id));
 };

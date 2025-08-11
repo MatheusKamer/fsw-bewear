@@ -3,6 +3,7 @@ import { MinusIcon, PlusIcon, TrashIcon } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 
+import { decreaseCartProductQuantity } from '@/actions/decrease-cart-product-quantity';
 import { removeProductFromCart } from '@/actions/remove-cart-action';
 import { formatCentsToBRL } from '@/helpers/money';
 
@@ -39,8 +40,18 @@ export const CartItem = ({
     },
   });
 
+  const { mutate: decreaseProductQuantity } = useMutation({
+    mutationKey: ['decreaseCartProductQuantity', id],
+    mutationFn: async () => {
+      await decreaseCartProductQuantity({ cartItemId: id });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      setQuantity((prev) => Math.max(prev - 1, 1));
+    },
+  });
+
   const increment = () => setQuantity((prev) => prev + 1);
-  const decrement = () => setQuantity((prev) => Math.max(prev - 1, 1));
 
   const priceTotal = formatCentsToBRL(productVariantPriceInCents * quantity);
   return (
@@ -59,7 +70,12 @@ export const CartItem = ({
             {productVariantName}
           </p>
           <div className="flex w-24 items-center justify-between rounded-lg border">
-            <Button size={'icon'} variant={'ghost'} onClick={decrement}>
+            <Button
+              disabled={quantity === 1}
+              size={'icon'}
+              variant={'ghost'}
+              onClick={() => decreaseProductQuantity()}
+            >
               <MinusIcon />
             </Button>
             <p>{quantity}</p>
