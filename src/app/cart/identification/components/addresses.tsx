@@ -21,6 +21,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { shippingAddressTable } from '@/db/schema';
 import { useUserAddresses } from '@/hooks/queries/use-user-addresses';
 
 const addressFormSchema = z.object({
@@ -84,7 +85,11 @@ async function fetchAddressByCep(cep: string) {
   }
 }
 
-export const Addresses = () => {
+interface AddressProps {
+  shippingAddresses: (typeof shippingAddressTable.$inferSelect)[];
+}
+
+export const Addresses = ({ shippingAddresses }: AddressProps) => {
   const [selectedAddress, setSelectedAddress] = useState<string | null>(null);
   const [isLoadingCep, setIsLoadingCep] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -93,7 +98,7 @@ export const Addresses = () => {
     data: addresses,
     isLoading: isLoadingAddresses,
     refetch,
-  } = useUserAddresses();
+  } = useUserAddresses({ initialData: shippingAddresses });
 
   const form = useForm<AddressFormValues>({
     resolver: zodResolver(addressFormSchema),
