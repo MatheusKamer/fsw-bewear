@@ -7,6 +7,7 @@ import { PatternFormat } from 'react-number-format';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
+import { addShippingAddress } from '@/actions/add-shipping-address';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -20,6 +21,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useUserAddresses } from '@/hooks/queries/use-user-addresses';
 
 const addressFormSchema = z.object({
   recipientName: z
@@ -49,7 +51,17 @@ const addressFormSchema = z.object({
 
 type AddressFormValues = z.infer<typeof addressFormSchema>;
 
-// Função para buscar endereço por CEP
+const formatCep = (cep: string) => {
+  return cep.replace(/(\d{5})(\d{3})/, '$1-$2');
+};
+
+const formatPhone = (phone: string) => {
+  if (phone.length === 11) {
+    return phone.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+  }
+  return phone.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+};
+
 async function fetchAddressByCep(cep: string) {
   try {
     const cleanCep = cep.replace(/\D/g, '');
@@ -75,6 +87,13 @@ async function fetchAddressByCep(cep: string) {
 export const Addresses = () => {
   const [selectedAddress, setSelectedAddress] = useState<string | null>(null);
   const [isLoadingCep, setIsLoadingCep] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const {
+    data: addresses,
+    isLoading: isLoadingAddresses,
+    refetch,
+  } = useUserAddresses();
 
   const form = useForm<AddressFormValues>({
     resolver: zodResolver(addressFormSchema),
@@ -94,16 +113,22 @@ export const Addresses = () => {
 
   async function onSubmit(values: AddressFormValues) {
     try {
-      console.log('Address form values:', values);
-      // TODO: Implementar a lógica para salvar o endereço
-      toast.success('Endereço salvo com sucesso!');
+      setIsSubmitting(true);
+      const result = await addShippingAddress(values);
+
+      if (result.success) {
+        toast.success(result.message);
+        form.reset();
+        setSelectedAddress(null);
+        refetch();
+      }
     } catch (error) {
       toast.error('Erro ao salvar endereço. Tente novamente.');
       console.error('Error saving address:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   }
-
-  // Função para buscar endereço automaticamente quando CEP for preenchido
   const handleCepChange = async (cep: string) => {
     const cleanCep = cep.replace(/\D/g, '');
 
@@ -127,15 +152,76 @@ export const Addresses = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Shipping Addresses</CardTitle>
+        <CardTitle>Endereços de Entrega</CardTitle>
       </CardHeader>
       <CardContent>
         <RadioGroup value={selectedAddress} onValueChange={setSelectedAddress}>
+          {isLoadingAddresses && (
+            <Card>
+              <CardContent>
+                <div className="flex items-center justify-center py-4">
+                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600"></div>
+                  <span className="ml-2 text-sm text-gray-600">
+                    Carregando endereços...
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {addresses &&
+            addresses.length > 0 &&
+            addresses.map((address) => (
+              <Card key={address.id} className="mb-3">
+                <CardContent>
+                  <div className="flex items-start space-x-3">
+                    <RadioGroupItem
+                      value={address.id}
+                      id={address.id}
+                      className="mt-1"
+                    />
+                    <div className="flex-1">
+                      <Label htmlFor={address.id} className="cursor-pointer">
+                        <div className="space-y-1">
+                          <div className="font-medium">
+                            {address.recipientName}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {address.street}, {address.number}
+                            {address.complement && `, ${address.complement}`}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {address.neighborhood}, {address.city} -{' '}
+                            {address.state}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            CEP: {formatCep(address.zipCode)} | Tel:{' '}
+                            {formatPhone(address.phone)}
+                          </div>
+                        </div>
+                      </Label>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+
+          {!isLoadingAddresses && addresses && addresses.length === 0 && (
+            <Card className="mb-3">
+              <CardContent>
+                <div className="py-4 text-center text-gray-500">
+                  <p>Você ainda não possui endereços cadastrados.</p>
+                  <p className="text-sm">Adicione um novo endereço abaixo.</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardContent>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="add_new" id="add_new" />
-                <Label htmlFor="add_new">Add Address</Label>
+                <Label htmlFor="add_new">Adicionar Novo Endereço</Label>
               </div>
             </CardContent>
           </Card>
@@ -144,7 +230,7 @@ export const Addresses = () => {
         {selectedAddress === 'add_new' && (
           <Card className="mt-4">
             <CardHeader>
-              <CardTitle className="text-lg">New Address</CardTitle>
+              <CardTitle className="text-lg">Novo Endereço</CardTitle>
             </CardHeader>
             <CardContent>
               <Form {...form}>
@@ -327,8 +413,12 @@ export const Addresses = () => {
                   </div>
 
                   <div className="flex justify-end pt-4">
-                    <Button type="submit" className="w-full md:w-auto">
-                      Save Address
+                    <Button
+                      type="submit"
+                      className="w-full md:w-auto"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? 'Salvando...' : 'Salvar Endereço'}
                     </Button>
                   </div>
                 </form>
