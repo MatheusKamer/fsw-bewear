@@ -37,7 +37,10 @@ const CartIdentificationPage = async () => {
     <>
       <Header />
       <div className="px-5">
-        <Addresses shippingAddresses={shippingAddresses} />
+        <Addresses
+          shippingAddresses={shippingAddresses}
+          defaultShippingAddressId={cart.shippingAddressId}
+        />
       </div>
     </>
   );

@@ -89,10 +89,16 @@ async function fetchAddressByCep(cep: string) {
 
 interface AddressProps {
   shippingAddresses: (typeof shippingAddressTable.$inferSelect)[];
+  defaultShippingAddressId: string | null;
 }
 
-export const Addresses = ({ shippingAddresses }: AddressProps) => {
-  const [selectedAddress, setSelectedAddress] = useState<string | null>(null);
+export const Addresses = ({
+  shippingAddresses,
+  defaultShippingAddressId,
+}: AddressProps) => {
+  const [selectedAddress, setSelectedAddress] = useState<string | null>(
+    defaultShippingAddressId,
+  );
   const [isLoadingCep, setIsLoadingCep] = useState(false);
   const [isSubmittingForm, setIsSubmittingForm] = useState(false);
   const [isUpdatingCart, setIsUpdatingCart] = useState(false);
