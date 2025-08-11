@@ -3,6 +3,7 @@ import { MinusIcon, PlusIcon, TrashIcon } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 
+import { addProductToCart } from '@/actions/add-cart-products';
 import { decreaseCartProductQuantity } from '@/actions/decrease-cart-product-quantity';
 import { removeProductFromCart } from '@/actions/remove-cart-action';
 import { formatCentsToBRL } from '@/helpers/money';
@@ -12,6 +13,7 @@ import { Button } from '../ui/button';
 interface CartItemProps {
   id: string;
   productName: string;
+  productVariantId: string;
   productVariantName: string;
   productVariantPriceInCents: number;
   productVariantImageUrl: string;
@@ -21,6 +23,7 @@ interface CartItemProps {
 export const CartItem = ({
   id,
   productName,
+  productVariantId,
   productVariantName,
   productVariantPriceInCents,
   productVariantImageUrl,
@@ -51,7 +54,16 @@ export const CartItem = ({
     },
   });
 
-  const increment = () => setQuantity((prev) => prev + 1);
+  const { mutate: incrementProductQuantity } = useMutation({
+    mutationKey: ['incrementCartProductQuantity', productVariantId],
+    mutationFn: async () => {
+      await addProductToCart({ productVariantId, quantity: 1 });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      setQuantity((prev) => prev + 1);
+    },
+  });
 
   const priceTotal = formatCentsToBRL(productVariantPriceInCents * quantity);
   return (
@@ -79,7 +91,11 @@ export const CartItem = ({
               <MinusIcon />
             </Button>
             <p>{quantity}</p>
-            <Button size={'icon'} variant={'ghost'} onClick={increment}>
+            <Button
+              size={'icon'}
+              variant={'ghost'}
+              onClick={() => incrementProductQuantity()}
+            >
               <PlusIcon />
             </Button>
           </div>
