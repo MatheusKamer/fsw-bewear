@@ -2,6 +2,7 @@
 
 import { headers } from 'next/headers';
 
+import { updateCartShippingAddress } from '@/actions/update-cart-shipping-address';
 import { db } from '@/db';
 import { shippingAddressTable } from '@/db/schema';
 import { auth } from '@/lib/auth';
@@ -36,11 +37,16 @@ export const addShippingAddress = async (data: AddShippingAddressSchema) => {
         phone: validatedData.phone,
       })
       .returning({ id: shippingAddressTable.id });
+    try {
+      await updateCartShippingAddress({ shippingAddressId: newAddress.id });
+    } catch (cartError) {
+      console.warn('Warning: Could not link address to cart:', cartError);
+    }
 
     return {
       success: true,
       addressId: newAddress.id,
-      message: 'Endereço adicionado com sucesso!',
+      message: 'Endereço adicionado e vinculado ao carrinho com sucesso!',
     };
   } catch (error) {
     console.error('Error adding shipping address:', error);

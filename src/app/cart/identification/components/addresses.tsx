@@ -1,13 +1,14 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { PatternFormat } from 'react-number-format';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
 import { addShippingAddress } from '@/actions/add-shipping-address';
+import { updateCartShippingAddress } from '@/actions/update-cart-shipping-address';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -22,6 +23,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { shippingAddressTable } from '@/db/schema';
+import { useCart } from '@/hooks/queries/use-cart';
 import { useUserAddresses } from '@/hooks/queries/use-user-addresses';
 
 const addressFormSchema = z.object({
@@ -92,13 +94,51 @@ interface AddressProps {
 export const Addresses = ({ shippingAddresses }: AddressProps) => {
   const [selectedAddress, setSelectedAddress] = useState<string | null>(null);
   const [isLoadingCep, setIsLoadingCep] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmittingForm, setIsSubmittingForm] = useState(false);
+  const [isUpdatingCart, setIsUpdatingCart] = useState(false);
+
+  const handleProceedToPayment = async () => {
+    if (!selectedAddress || selectedAddress === 'add_new') return;
+
+    if (cart?.shippingAddressId !== selectedAddress) {
+      try {
+        setIsUpdatingCart(true);
+        const result = await updateCartShippingAddress({
+          shippingAddressId: selectedAddress,
+        });
+
+        if (result.success) {
+          toast.success(result.message);
+          // TODO: adicionar redirecionamento
+          // Por exemplo: router.push('/checkout/payment')
+        }
+      } catch (error) {
+        toast.error('Erro ao vincular endereço ao carrinho. Tente novamente.');
+        console.error('Error updating cart shipping address:', error);
+        return;
+      } finally {
+        setIsUpdatingCart(false);
+      }
+    } else {
+      // TODO: adicionar redirecionamento
+      // Por exemplo: router.push('/checkout/payment')
+      toast.success('Prosseguindo para o pagamento...');
+    }
+  };
 
   const {
     data: addresses,
     isLoading: isLoadingAddresses,
     refetch,
   } = useUserAddresses({ initialData: shippingAddresses });
+
+  const { data: cart } = useCart();
+
+  useEffect(() => {
+    if (cart?.shippingAddressId && !selectedAddress) {
+      setSelectedAddress(cart.shippingAddressId);
+    }
+  }, [cart?.shippingAddressId, selectedAddress]);
 
   const form = useForm<AddressFormValues>({
     resolver: zodResolver(addressFormSchema),
@@ -118,22 +158,23 @@ export const Addresses = ({ shippingAddresses }: AddressProps) => {
 
   async function onSubmit(values: AddressFormValues) {
     try {
-      setIsSubmitting(true);
+      setIsSubmittingForm(true);
       const result = await addShippingAddress(values);
 
       if (result.success) {
         toast.success(result.message);
         form.reset();
-        setSelectedAddress(null);
+        setSelectedAddress(result.addressId);
         refetch();
       }
     } catch (error) {
       toast.error('Erro ao salvar endereço. Tente novamente.');
       console.error('Error saving address:', error);
     } finally {
-      setIsSubmitting(false);
+      setIsSubmittingForm(false);
     }
   }
+
   const handleCepChange = async (cep: string) => {
     const cleanCep = cep.replace(/\D/g, '');
 
@@ -188,8 +229,10 @@ export const Addresses = ({ shippingAddresses }: AddressProps) => {
                     <div className="flex-1">
                       <Label htmlFor={address.id} className="cursor-pointer">
                         <div className="space-y-1">
-                          <div className="font-medium">
-                            {address.recipientName}
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">
+                              {address.recipientName}
+                            </span>
                           </div>
                           <div className="text-sm text-gray-600">
                             {address.street}, {address.number}
@@ -231,7 +274,6 @@ export const Addresses = ({ shippingAddresses }: AddressProps) => {
             </CardContent>
           </Card>
         </RadioGroup>
-
         {selectedAddress === 'add_new' && (
           <Card className="mt-4">
             <CardHeader>
@@ -421,9 +463,9 @@ export const Addresses = ({ shippingAddresses }: AddressProps) => {
                     <Button
                       type="submit"
                       className="w-full md:w-auto"
-                      disabled={isSubmitting}
+                      disabled={isSubmittingForm}
                     >
-                      {isSubmitting ? 'Salvando...' : 'Salvar Endereço'}
+                      {isSubmittingForm ? 'Salvando...' : 'Salvar Endereço'}
                     </Button>
                   </div>
                 </form>
@@ -431,6 +473,19 @@ export const Addresses = ({ shippingAddresses }: AddressProps) => {
             </CardContent>
           </Card>
         )}
+        <div className="mt-4 flex justify-end">
+          <Button
+            onClick={handleProceedToPayment}
+            disabled={
+              !selectedAddress ||
+              selectedAddress === 'add_new' ||
+              isUpdatingCart
+            }
+            className="w-full md:w-auto"
+          >
+            {isUpdatingCart ? 'Preparando...' : 'Seguir para pagamento'}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
