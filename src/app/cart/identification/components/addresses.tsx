@@ -204,7 +204,7 @@ export const Addresses = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Endereços de Entrega</CardTitle>
+        <CardTitle>Shipping Addresses</CardTitle>
       </CardHeader>
       <CardContent>
         <RadioGroup value={selectedAddress} onValueChange={setSelectedAddress}>
@@ -214,7 +214,7 @@ export const Addresses = ({
                 <div className="flex items-center justify-center py-4">
                   <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600"></div>
                   <span className="ml-2 text-sm text-gray-600">
-                    Carregando endereços...
+                    Loading addresses...
                   </span>
                 </div>
               </CardContent>
@@ -264,8 +264,8 @@ export const Addresses = ({
             <Card className="mb-3">
               <CardContent>
                 <div className="py-4 text-center text-gray-500">
-                  <p>Você ainda não possui endereços cadastrados.</p>
-                  <p className="text-sm">Adicione um novo endereço abaixo.</p>
+                  <p>You don&apos;t have any saved addresses.</p>
+                  <p className="text-sm">Add a new address below.</p>
                 </div>
               </CardContent>
             </Card>
@@ -275,7 +275,7 @@ export const Addresses = ({
             <CardContent>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="add_new" id="add_new" />
-                <Label htmlFor="add_new">Adicionar Novo Endereço</Label>
+                <Label htmlFor="add_new">Add New Address</Label>
               </div>
             </CardContent>
           </Card>
@@ -283,7 +283,7 @@ export const Addresses = ({
         {selectedAddress === 'add_new' && (
           <Card className="mt-4">
             <CardHeader>
-              <CardTitle className="text-lg">Novo Endereço</CardTitle>
+              <CardTitle className="text-lg">New Address</CardTitle>
             </CardHeader>
             <CardContent>
               <Form {...form}>
@@ -297,7 +297,7 @@ export const Addresses = ({
                       name="zipCode"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>CEP</FormLabel>
+                          <FormLabel>ZIP Code</FormLabel>
                           <FormControl>
                             <div className="relative">
                               <PatternFormat
