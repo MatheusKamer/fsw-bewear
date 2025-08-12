@@ -23,7 +23,7 @@ const CheckoutCancelPage = () => {
         </DialogDescription>
         <DialogFooter className="w-full">
           <Button className="rounded-full" size={'lg'} variant="outline">
-            <Link href="/">Access my orders</Link>
+            <Link href="/my-orders">Access my orders</Link>
           </Button>
           <Button className="rounded-full" size={'lg'}>
             <Link href="/">Return to the store</Link>

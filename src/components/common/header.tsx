@@ -3,6 +3,7 @@
 import { LogInIcon, MenuIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useState } from 'react';
 
 import { authClient } from '@/lib/auth-client';
 
@@ -19,6 +20,7 @@ import { Cart } from './cart';
 
 export const Header = () => {
   const { data: session } = authClient.useSession();
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   return (
     <header className="flex items-center justify-between p-5">
@@ -29,7 +31,7 @@ export const Header = () => {
       <div className="flex items-center gap-2">
         <Cart />
 
-        <Sheet>
+        <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
           <SheetTrigger asChild>
             <Button variant="outline" size={'icon'}>
               <MenuIcon />
@@ -66,7 +68,10 @@ export const Header = () => {
                     <Button
                       size={'icon'}
                       variant={'outline'}
-                      onClick={() => authClient.signOut()}
+                      onClick={() => {
+                        authClient.signOut();
+                        setIsSheetOpen(false);
+                      }}
                     >
                       <LogInIcon />
                     </Button>
@@ -75,7 +80,12 @@ export const Header = () => {
               ) : (
                 <div className="flex items-center justify-between">
                   <h2 className="font-semibold">Sign in</h2>
-                  <Button size={'icon'} asChild variant={'outline'}>
+                  <Button
+                    size={'icon'}
+                    asChild
+                    variant={'outline'}
+                    onClick={() => setIsSheetOpen(false)}
+                  >
                     <Link href={'/authentication'}>
                       <LogInIcon />
                     </Link>

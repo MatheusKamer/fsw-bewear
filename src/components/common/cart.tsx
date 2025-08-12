@@ -1,5 +1,8 @@
+'use client';
+
 import { ShoppingBasketIcon } from 'lucide-react';
 import Link from 'next/link';
+import { useState } from 'react';
 
 import { formatCentsToBRL } from '@/helpers/money';
 import { useCart } from '@/hooks/queries/use-cart';
@@ -18,9 +21,10 @@ import { CartItem } from './cart-item';
 
 export const Cart = () => {
   const { data: cart } = useCart();
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   return (
-    <Sheet>
+    <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
       <SheetTrigger asChild>
         <Button variant="outline" size={'icon'}>
           <ShoppingBasketIcon />
@@ -65,7 +69,12 @@ export const Cart = () => {
 
               <Separator />
               <div className="px-5">
-                <Button variant="default" className="w-full rounded-full">
+                <Button
+                  variant="default"
+                  className="w-full rounded-full"
+                  onClick={() => setIsSheetOpen(false)}
+                  asChild
+                >
                   <Link href="/cart/identification">Checkout</Link>
                 </Button>
               </div>
