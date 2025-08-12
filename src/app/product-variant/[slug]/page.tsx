@@ -2,8 +2,6 @@ import { eq } from 'drizzle-orm';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 
-import { Footer } from '@/components/common/footer';
-import { Header } from '@/components/common/header';
 import { ProductsList } from '@/components/common/products-list';
 import { db } from '@/db';
 import { productTable, productVariantTable } from '@/db/schema';
@@ -42,47 +40,39 @@ const ProductVariantPage = async ({ params }: ProductVariantPageProps) => {
   });
 
   return (
-    <>
-      <Header />
-      <div className="flex flex-col space-y-6">
-        <Image
-          src={productVariant.imageUrl}
-          alt={productVariant.name}
-          sizes="100vw"
-          width={0}
-          height={0}
-          className="h-auto w-full rounded-3xl object-cover px-5"
+    <div className="flex flex-col space-y-6">
+      <Image
+        src={productVariant.imageUrl}
+        alt={productVariant.name}
+        sizes="100vw"
+        width={0}
+        height={0}
+        className="h-auto w-full rounded-3xl object-cover px-5"
+      />
+
+      <div className="px-5">
+        <VariantsSelector
+          selectedVariant={productVariant.slug}
+          variants={productVariant.product.variants}
         />
-
-        <div className="px-5">
-          <VariantsSelector
-            selectedVariant={productVariant.slug}
-            variants={productVariant.product.variants}
-          />
-        </div>
-
-        <div className="px-5">
-          <h2 className="text-lg font-semibold">
-            {productVariant.product.name}
-          </h2>
-          <h3 className="text-muted-foreground text-sm">
-            {productVariant.name}
-          </h3>
-          <h3 className="text-lg font-semibold">
-            {formatCentsToBRL(productVariant.priceInCents)}
-          </h3>
-        </div>
-
-        <ProductActions productVariantId={productVariant.id} />
-
-        <div className="px-5">
-          <p className="text-sm">{productVariant.product.description}</p>
-        </div>
-
-        <ProductsList title="May like this" products={likelyProducts} />
-        <Footer />
       </div>
-    </>
+
+      <div className="px-5">
+        <h2 className="text-lg font-semibold">{productVariant.product.name}</h2>
+        <h3 className="text-muted-foreground text-sm">{productVariant.name}</h3>
+        <h3 className="text-lg font-semibold">
+          {formatCentsToBRL(productVariant.priceInCents)}
+        </h3>
+      </div>
+
+      <ProductActions productVariantId={productVariant.id} />
+
+      <div className="px-5">
+        <p className="text-sm">{productVariant.product.description}</p>
+      </div>
+
+      <ProductsList title="May like this" products={likelyProducts} />
+    </div>
   );
 };
 

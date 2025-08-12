@@ -2,8 +2,6 @@ import { desc } from 'drizzle-orm';
 import Image from 'next/image';
 
 import { CategorySelector } from '@/components/common/category-selector';
-import { Footer } from '@/components/common/footer';
-import { Header } from '@/components/common/header';
 import { PartnerBrands } from '@/components/common/partner-brands';
 import { ProductsList } from '@/components/common/products-list';
 import { db } from '@/db';
@@ -25,7 +23,6 @@ export default async function Home() {
 
   return (
     <>
-      <Header />
       <div className="space-y-6">
         <div className="px-5">
           <Image
@@ -61,8 +58,6 @@ export default async function Home() {
           title="Recently Created Products"
           products={newlyCreatedProducts}
         />
-
-        <Footer />
       </div>
     </>
   );

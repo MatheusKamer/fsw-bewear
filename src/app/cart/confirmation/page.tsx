@@ -1,8 +1,6 @@
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-import { Footer } from '@/components/common/footer';
-import { Header } from '@/components/common/header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { db } from '@/db';
 import { auth } from '@/lib/auth';
@@ -49,36 +47,31 @@ const ConfirmationPage = async () => {
   }, 0);
 
   return (
-    <div className="space-y-4">
-      <Header />
-      <div className="space-y-4 px-5">
-        <Card>
-          <CardHeader>
-            <CardTitle>Confirmation</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Card>
-              <CardContent>{formatAddress(cart.shippingAddress)}</CardContent>
-            </Card>
-            <FinishOrderButton />
-          </CardContent>
-        </Card>
+    <div className="space-y-4 px-5">
+      <Card>
+        <CardHeader>
+          <CardTitle>Confirmation</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Card>
+            <CardContent>{formatAddress(cart.shippingAddress)}</CardContent>
+          </Card>
+          <FinishOrderButton />
+        </CardContent>
+      </Card>
 
-        <CartSummary
-          subtotalInCents={cartTotalInCents}
-          totalInCents={cartTotalInCents}
-          products={cart.items.map((item) => ({
-            id: item.id,
-            productName: item.productVariant.product.name,
-            variantName: item.productVariant.name,
-            quantity: item.quantity,
-            priceInCents: item.productVariant.priceInCents,
-            imageUrl: item.productVariant.imageUrl,
-          }))}
-        />
-      </div>
-
-      <Footer />
+      <CartSummary
+        subtotalInCents={cartTotalInCents}
+        totalInCents={cartTotalInCents}
+        products={cart.items.map((item) => ({
+          id: item.id,
+          productName: item.productVariant.product.name,
+          variantName: item.productVariant.name,
+          quantity: item.quantity,
+          priceInCents: item.productVariant.priceInCents,
+          imageUrl: item.productVariant.imageUrl,
+        }))}
+      />
     </div>
   );
 };
