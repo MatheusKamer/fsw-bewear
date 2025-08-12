@@ -34,11 +34,15 @@ export const addProductToCart = async ({
     throw new Error('Product variant not found');
   }
 
+  console.log('Product Variant:', productVariant);
+
   const cart = await db.query.cartTable.findFirst({
     where: (cart, { eq }) => eq(cart.userId, session.user.id),
   });
 
   let cartId = cart?.id;
+
+  console.log('Cart ID:', cartId);
 
   if (!cartId) {
     const [newCart] = await db
@@ -50,14 +54,17 @@ export const addProductToCart = async ({
     cartId = newCart.id;
   }
 
+  console.log('Cart ID:', cartId);
+
   const cartItem = await db.query.cartItemTable.findFirst({
     where: (cartItem, { eq }) =>
       eq(cartItem.cartId, cartId) &&
       eq(cartItem.productVariantId, productVariantId),
   });
 
+  console.log('Cart Item:', cartItem);
+
   if (cartItem) {
-    // Update the quantity if the item already exists
     await db
       .update(cartItemTable)
       .set({ quantity: cartItem.quantity + quantity })
@@ -65,6 +72,12 @@ export const addProductToCart = async ({
 
     return;
   }
+
+  console.log('Adding new cart item:', {
+    cartId,
+    productVariantId,
+    quantity,
+  });
 
   await db.insert(cartItemTable).values({
     cartId,

@@ -1,26 +1,14 @@
 import { eq } from 'drizzle-orm';
-import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 
 import { db } from '@/db';
 import { cartItemTable, cartTable, orderTable } from '@/db/schema';
-import { auth } from '@/lib/auth';
 
 export const POST = async (request: Request) => {
   if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_WEBHOOK_SECRET) {
     throw new Error('Stripe secret key or webhook secret is not defined');
   }
-
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session) {
-    throw new Error('Unauthorized');
-  }
-
-  const user = session.user;
 
   const signature = request.headers.get('stripe-signature');
 
@@ -38,10 +26,19 @@ export const POST = async (request: Request) => {
   );
 
   if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as Stripe.Checkout.Session;
-    const orderId = session.metadata?.orderId;
+    const sessionStripe = event.data.object as Stripe.Checkout.Session;
+    const orderId = sessionStripe.metadata?.orderId;
 
     if (!orderId) {
+      return NextResponse.error();
+    }
+
+    // Get the order to find the userId
+    const order = await db.query.orderTable.findFirst({
+      where: eq(orderTable.id, orderId),
+    });
+
+    if (!order) {
       return NextResponse.error();
     }
 
@@ -53,7 +50,7 @@ export const POST = async (request: Request) => {
       .where(eq(orderTable.id, orderId));
 
     const cart = await db.query.cartTable.findFirst({
-      where: eq(cartTable.userId, user.id),
+      where: eq(cartTable.userId, order.userId),
       with: {
         shippingAddress: true,
         items: {
