@@ -1,14 +1,26 @@
 import { eq } from 'drizzle-orm';
+import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 
 import { db } from '@/db';
-import { orderTable } from '@/db/schema';
+import { cartItemTable, cartTable, orderTable } from '@/db/schema';
+import { auth } from '@/lib/auth';
 
 export const POST = async (request: Request) => {
   if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_WEBHOOK_SECRET) {
     throw new Error('Stripe secret key or webhook secret is not defined');
   }
+
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    throw new Error('Unauthorized');
+  }
+
+  const user = session.user;
 
   const signature = request.headers.get('stripe-signature');
 
@@ -39,6 +51,25 @@ export const POST = async (request: Request) => {
         status: 'confirmed',
       })
       .where(eq(orderTable.id, orderId));
+
+    const cart = await db.query.cartTable.findFirst({
+      where: eq(cartTable.userId, user.id),
+      with: {
+        shippingAddress: true,
+        items: {
+          with: {
+            productVariant: true,
+          },
+        },
+      },
+    });
+
+    if (cart) {
+      await db.transaction(async (tx) => {
+        await tx.delete(cartTable).where(eq(cartTable.id, cart.id));
+        await tx.delete(cartItemTable).where(eq(cartItemTable.cartId, cart.id));
+      });
+    }
   }
 
   return NextResponse.json({ received: true });
